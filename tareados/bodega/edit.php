@@ -7,14 +7,12 @@ if (!$id) die('ID inválido');
 $conn = sqlsrv_connect($serverName, $connectionOptions);
 if ($conn === false) die(print_r(sqlsrv_errors(), true));
 
-// Obtener bodega actual
 $sql = "SELECT * FROM dbo.Bodegas WHERE IdBodegas = ?";
 $stmt = sqlsrv_query($conn, $sql, [$id]);
 $bodega = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC);
 if (!$bodega) die('Bodega no encontrada');
 sqlsrv_free_stmt($stmt);
 
-// Obtener todos los productos con su BodegaId para saber cuáles están asignados
 $sql = "SELECT IdProducto, Nombre, BodegaId FROM dbo.Productos";
 $stmt = sqlsrv_query($conn, $sql);
 $productos = [];
@@ -41,21 +39,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (empty($errors)) {
-        // Actualizar nombre de la bodega
         $sql = "UPDATE dbo.Bodegas SET Nombre = ? WHERE IdBodegas = ?";
         $stmt = sqlsrv_query($conn, $sql, [$nombre, $id]);
         if ($stmt === false) die(print_r(sqlsrv_errors(), true));
         sqlsrv_free_stmt($stmt);
 
-        // Desasignar productos que ya no están seleccionados
         if (empty($productos_seleccionados)) {
-            // Ningún producto seleccionado: limpiar todos que tengan esta bodega
             $sql = "UPDATE dbo.Productos SET BodegaId = NULL WHERE BodegaId = ?";
             $stmt = sqlsrv_query($conn, $sql, [$id]);
             if ($stmt === false) die(print_r(sqlsrv_errors(), true));
             sqlsrv_free_stmt($stmt);
         } else {
-            // Actualizar productos desasignados (que tengan esta bodega pero no están en seleccionados)
             $placeholders = implode(',', array_fill(0, count($productos_seleccionados), '?'));
             $sql = "UPDATE dbo.Productos SET BodegaId = NULL WHERE BodegaId = ? AND IdProducto NOT IN ($placeholders)";
             $params = array_merge([$id], $productos_seleccionados);
@@ -64,7 +58,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             sqlsrv_free_stmt($stmt);
         }
 
-        // Asignar BodegaId a los productos seleccionados
         foreach ($productos_seleccionados as $idProducto) {
             $sql = "UPDATE dbo.Productos SET BodegaId = ? WHERE IdProducto = ?";
             $stmt = sqlsrv_query($conn, $sql, [$id, $idProducto]);
@@ -86,10 +79,58 @@ sqlsrv_close($conn);
     <meta charset="UTF-8" />
     <title>Editar Bodega</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet" />
+        <style>
+        body {
+            padding-top: 100px;
+            background-color: #f8f9fa;
+        }
+        .form-label span.text-danger {
+            font-weight: 700;
+        }
+        .container_CPB {
+            max-width: 650px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+    </style>
 </head>
 <body>
-<div class="container">
-    <h1 class="mt-5">Editar Bodega</h1>
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary fixed-top shadow">
+    <div class="container">
+        <a class="navbar-brand d-flex align-items-center" href="/tareados/">
+            <i class="bi bi-hdd-network me-2"></i>
+            Tarea 2 
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMenu"
+            aria-controls="navbarMenu" aria-expanded="false" aria-label="Alternar navegación">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarMenu">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item">
+                    <a class="nav-link" href="/tareados/productos/index.php">
+                        <i class="bi bi-box-seam me-1"></i> Productos
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/tareados/bodega/index.php">
+                        <i class="bi bi-building me-1"></i> Bodegas
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/tareados/categorias/index.php">
+                        <i class="bi bi-tags me-1"></i> Categorías
+                    </a>
+                </li>                
+            </ul>
+        </div>
+    </div>
+</nav>
+<div class="container_CPB">
+    <h1 class="mb-4 text-primary">Editar Bodega</h1>
 
     <?php if (!empty($errors)): ?>
         <div class="alert alert-danger">
