@@ -121,7 +121,7 @@ function isErrorField($field, $fieldsWithErrors) {
     <form method="post" novalidate>
     
         <div class="mb-3">
-            <label for="nombre" class="form-label">Nombre de la Bodega *</label>
+            <label for="nombre" class="form-label">Nombre de la categoría *</label>
             <input type="text" id="nombre" name="nombre" class="form-control" value="<?= htmlspecialchars($_POST['nombre'] ?? '') ?>" required>
         </div>
 
